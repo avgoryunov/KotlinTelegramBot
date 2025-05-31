@@ -25,14 +25,21 @@ fun main() {
 
         when (incomingValue) {
             "1" -> println("Выбран пункт \"Учить слова\"")
-            "2" -> println("Выбран пункт \"Статистика\"")
+            "2" -> {
+                println("Выбран пункт \"Статистика\"")
+                val totalCount = dictionary.count()
+                val learnedCount = dictionary.filter(3).count()
+                val percentLearnedCount = learnedCount * FULL_PERCENT / totalCount
+                println("Выучено $learnedCount из $totalCount слов | $percentLearnedCount%")
+            }
+
             "0" -> return
             else -> println("Введите число 1, 2 или 0")
         }
     }
 }
 
-fun loadDictionary(): MutableList<Word> {
+fun loadDictionary(): List<Word> {
     val wordsFile = File("words.txt")
     wordsFile.createNewFile()
 
@@ -40,7 +47,7 @@ fun loadDictionary(): MutableList<Word> {
     wordsFile.appendText("\n")
     wordsFile.appendText("dog|собака|0")
     wordsFile.appendText("\n")
-    wordsFile.appendText("cat|кошка|0")
+    wordsFile.appendText("cat|кошка|3")
 
     val dictionary: MutableList<Word> = mutableListOf()
     val lines: List<String> = wordsFile.readLines()
@@ -52,3 +59,9 @@ fun loadDictionary(): MutableList<Word> {
     }
     return dictionary
 }
+
+fun List<Word>.filter(minCorrectAnswersCount: Int): List<Word> {
+    return this.filter { dictionary -> dictionary.correctAnswersCount >= minCorrectAnswersCount }
+}
+
+const val FULL_PERCENT = 100
