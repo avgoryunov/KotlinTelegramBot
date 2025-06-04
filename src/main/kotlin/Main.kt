@@ -5,15 +5,14 @@ import java.io.File
 data class Word(
     val original: String,
     val translate: String,
-    val correctAnswersCount: Int = 0,
+    var correctAnswersCount: Int = 0,
 )
 
 fun main() {
     val dictionary = loadDictionary()
 
     while (true) {
-        println()
-        println("Меню:")
+        println("\nМеню:")
         println("1 - Учить слова")
         println("2 - Статистика")
         println("0 - Выход")
@@ -23,22 +22,41 @@ fun main() {
         when (incomingValue) {
             "1" -> {
                 println("Выбран пункт \"Учить слова\"")
-                val notLearnedList = getNotLearnedWords(dictionary)
 
-                while (notLearnedList != emptyList<Word>()) {
-                    val questionWords: List<Word> = notLearnedList.shuffled().take(4)
+                while (true) {
+                    val notLearnedList = getNotLearnedWords(dictionary)
+
+                    if (notLearnedList.isEmpty()) {
+                        println("Все слова в словаре выучены")
+                        break
+                    }
+
+                    val questionWords: List<Word> = notLearnedList.shuffled().take(NUMBER_QUESTION_WORDS)
                     val correctAnswer = questionWords.random()
 
-                    println()
-                    println("${correctAnswer.original}:")
+                    println("\n${correctAnswer.original}:")
+
                     for (i in questionWords.indices) {
                         println("${i + 1} - ${questionWords[i].translate}")
                     }
 
-                    val userAnswerInput = readLine()
+                    println("----------")
+                    println("0 - Меню")
+
+                    val userAnswerInput: String? = readLine()
+
+                    when (userAnswerInput) {
+                        "0" -> break
+                    }
+
+                    val correctAnswerId = questionWords.indexOf(correctAnswer)
+
+                    if (userAnswerInput == (correctAnswerId + 1).toString()) {
+                        println("Правильно!")
+                        questionWords[correctAnswerId].correctAnswersCount += 1
+                        saveDictionary(dictionary)
+                    } else println("Неправильно! ${correctAnswer.original} – это ${correctAnswer.translate}")
                 }
-                println("Все слова в словаре выучены")
-                continue
             }
 
             "2" -> {
@@ -79,5 +97,14 @@ fun getNotLearnedWords(dictionary: List<Word>): List<Word> {
     return dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWERS_COUNT }
 }
 
+fun saveDictionary(dictionary: List<Word>) {
+    File("words.txt").printWriter().use { out ->
+        dictionary.forEach { word ->
+            out.println("${word.original}|${word.translate}|${word.correctAnswersCount}")
+        }
+    }
+}
+
 const val FULL_PERCENT = 100
 const val MIN_CORRECT_ANSWERS_COUNT = 3
+const val NUMBER_QUESTION_WORDS = 4
