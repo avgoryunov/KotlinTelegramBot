@@ -7,23 +7,22 @@ import java.net.http.HttpResponse
 
 class TelegramBotService(
     val botToken: String,
-    var updateId: Int,
-    val botText: String,
 ) {
+    val client: HttpClient = HttpClient.newBuilder().build()
 
-    fun getUpdates(botToken: String, updateId: Int): String {
-        val urlGetUpdates = "https://api.telegram.org/bot$botToken/getUpdates?offset=$updateId"
-        val client: HttpClient = HttpClient.newBuilder().build()
+    fun getUpdates(updateId: Int): String {
+        val urlGetUpdates = "$TELEGRAM_ADDRESS$botToken/getUpdates?offset=$updateId"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
 
-    fun sendMessage(botToken: String, chatId: String?, text: String): String {
-        val urlSendMessage = "https://api.telegram.org/bot$botToken/sendMessage?chat_id=$chatId&text=$text"
-        val client1: HttpClient = HttpClient.newBuilder().build()
+    fun sendMessage(chatId: String?, text: String): String {
+        val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage?chat_id=$chatId&text=$text"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
-        val response: HttpResponse<String> = client1.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
 }
+
+const val TELEGRAM_ADDRESS = "https://api.telegram.org/bot"
