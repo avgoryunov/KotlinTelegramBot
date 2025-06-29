@@ -5,47 +5,53 @@ fun main(args: Array<String>) {
     val telegramBotService = TelegramBotService(
         args[0],
     )
-    var updateId = 0
-    val textRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
+    var lastUpdateId: Long = 0
+    val updateIdRegex: Regex = "\"update_id\":(\\d+)".toRegex()
+    val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
     val chatIdRegex: Regex = """"chat":\s*\{\s*"id":\s*(-?\d+)""".toRegex()
+    val dataRegex: Regex = "\"data\":\"(.+?)\"".toRegex()
+
+    val trainer = try {
+        LearnWordsTrainer()
+    } catch (e: Exception) {
+        println("Невозможно загрузить словарь: ${e.message}")
+        return
+    }
 
     while (true) {
         Thread.sleep(2000)
-        val updates: String = telegramBotService.getUpdates(
-            updateId = updateId,
-        )
+        val updates: String = telegramBotService.getUpdates(lastUpdateId)
 
         println(updates)
 
-        val startUpdateId = updates.lastIndexOf("update_id")
-        val endUpdateId = updates.lastIndexOf(",\n\"message\"")
-        if (startUpdateId == -1 || endUpdateId == -1) continue
-        val updateIdString = updates.substring(startUpdateId + 11, endUpdateId)
-        updateId = updateIdString.toInt() + 1
+        val updateId = updateIdRegex.find(updates)?.groups?.get(1)?.value?.toLongOrNull() ?: continue
+        lastUpdateId = updateId + 1
 
-        val userTextMatchResult: MatchResult? = textRegex.find(updates)
-        val userTextGroups = userTextMatchResult?.groups
-        val userText = userTextGroups?.get(1)?.value
+        val message = messageTextRegex.find(updates)?.groups?.get(1)?.value
 
-        println("userText: $userText")
+        println("userText: $message")
 
-        val chatIdMatchResult: MatchResult? = chatIdRegex.find(updates)
-        val chatIdGroups = chatIdMatchResult?.groups
-        val chatId = chatIdGroups?.get(1)?.value
+        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
+        val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (userText?.lowercase() == "Hello".lowercase()) {
-            val message: String = telegramBotService.sendMessage(
-                chatId = chatId,
-                text = "Hello",
-            )
-
+        if (message?.lowercase() == "hello" && chatId != null) {
+            val message = telegramBotService.sendMessage(chatId, "Hello")
             println(message)
+            val botMessage = messageTextRegex.find(message)?.groups?.get(1)?.value
 
-            val botTextMatchResult: MatchResult? = textRegex.find(message)
-            val botTextGroups = botTextMatchResult?.groups
-            val botText = botTextGroups?.get(1)?.value
+            println("botText: $botMessage")
+        }
 
-            println("botText: $botText")
+        if (message?.lowercase() == "menu" && chatId != null) {
+            telegramBotService.sendMenu(chatId)
+        }
+
+        if (message?.lowercase() == "/start" && chatId != null) {
+            telegramBotService.sendMenu(chatId)
+        }
+
+        if (data?.lowercase() == "statistics_clicked" && chatId != null) {
+            telegramBotService.sendMessage(chatId, "Выучено 10 из 10 слов | 100%")
         }
     }
 }
