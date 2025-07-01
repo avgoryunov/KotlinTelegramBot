@@ -31,10 +31,10 @@ fun main(args: Array<String>) {
 
         println("userText: $message")
 
-        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLong()
+        val chatId = chatIdRegex.find(updates)?.groups?.get(1)?.value?.toLongOrNull() ?: continue
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (message?.lowercase() == "hello" && chatId != null) {
+        if (message?.lowercase() == WELCOME_MESSAGE) {
             val message = telegramBotService.sendMessage(chatId, "Hello")
             println(message)
             val botMessage = messageTextRegex.find(message)?.groups?.get(1)?.value
@@ -42,16 +42,23 @@ fun main(args: Array<String>) {
             println("botText: $botMessage")
         }
 
-        if (message?.lowercase() == "menu" && chatId != null) {
+        if (message?.lowercase() == ProgramStart.VALUE_ONE) {
             telegramBotService.sendMenu(chatId)
         }
 
-        if (message?.lowercase() == "/start" && chatId != null) {
+        if (message?.lowercase() == ProgramStart.VALUE_TWO) {
             telegramBotService.sendMenu(chatId)
         }
 
-        if (data?.lowercase() == "statistics_clicked" && chatId != null) {
+        if (data?.lowercase() == STATISTICS_CLICKED) {
             telegramBotService.sendMessage(chatId, "Выучено 10 из 10 слов | 100%")
         }
     }
 }
+
+object ProgramStart {
+    const val VALUE_ONE = "menu"
+    const val VALUE_TWO = "/start"
+}
+
+const val WELCOME_MESSAGE = "hello"

@@ -39,15 +39,15 @@ class TelegramBotService(
             			[
             				{
             					"text": "Учить слова",
-            					"callback_data": "learn_words_clicked"
+            					"callback_data": "$LEARN_WORDS_CLICKED"
             				},
             				{
             					"text": "Статистика",
-            					"callback_data": "statistics_clicked"
+            					"callback_data": "$STATISTICS_CLICKED"
             				},
             				{
             					"text": "Выход",
-            					"callback_data": "exit_clicked"
+            					"callback_data": "$EXIT_CLICKED"
             				}
             			]
             		]
@@ -65,3 +65,6 @@ class TelegramBotService(
 }
 
 const val TELEGRAM_ADDRESS = "https://api.telegram.org/bot"
+const val LEARN_WORDS_CLICKED = "learn_words_clicked"
+const val STATISTICS_CLICKED = "statistics_clicked"
+const val EXIT_CLICKED = "exit_clicked"
