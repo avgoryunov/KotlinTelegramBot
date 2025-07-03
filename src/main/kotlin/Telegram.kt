@@ -51,7 +51,11 @@ fun main(args: Array<String>) {
         }
 
         if (data?.lowercase() == STATISTICS_CLICKED) {
-            telegramBotService.sendMessage(chatId, "Выучено 10 из 10 слов | 100%")
+            val statistics = trainer.getStatistics()
+            telegramBotService.sendMessage(
+                chatId,
+                "Выучено ${statistics.learned} из ${statistics.total} слов | ${statistics.percentLearned}%"
+            )
         }
     }
 }
