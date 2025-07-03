@@ -1,11 +1,5 @@
 package org.example
 
-data class Word(
-    val original: String,
-    val translate: String,
-    var correctAnswersCount: Int = 0,
-)
-
 fun Question.asConsoleString(): String {
     val variants = this.variants
         .mapIndexed { index: Int, word -> "${index + 1} - ${word.translate}" }
@@ -13,13 +7,7 @@ fun Question.asConsoleString(): String {
     return this.correctAnswer.original + "\n" + variants + "\n0 - выйти в меню"
 }
 
-fun main() {
-    val trainer = try {
-        LearnWordsTrainer(3, 4)
-    } catch (e: Exception) {
-        println("Невозможно загрузить словарь: ${e.message}")
-        return
-    }
+fun main(trainer: LearnWordsTrainer) {
 
     while (true) {
         println("\nМеню:")
