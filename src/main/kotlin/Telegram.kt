@@ -57,6 +57,10 @@ fun main(args: Array<String>) {
                 "Выучено ${statistics.learned} из ${statistics.total} слов | ${statistics.percentLearned}%"
             )
         }
+
+        if (data?.lowercase() == LEARN_WORDS_CLICKED) {
+            telegramBotService.checkNextQuestionAndSend(trainer, telegramBotService, chatId)
+        }
     }
 }
 
