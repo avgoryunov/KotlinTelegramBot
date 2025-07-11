@@ -30,7 +30,8 @@ class TelegramBotService(
 
     fun sendMenu(chatId: Long): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
-        val sendMenuBody = """
+
+        val menuBody = """
             {
             	"chat_id": $chatId,
             	"text": "Меню",
@@ -57,10 +58,58 @@ class TelegramBotService(
 
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(sendMenuBody))
+            .POST(HttpRequest.BodyPublishers.ofString(menuBody))
             .build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
+    }
+
+    fun checkNextQuestionAndSend(
+        trainer: LearnWordsTrainer,
+        telegramBotService: TelegramBotService,
+        chatId: Long,
+    ) {
+        val question = trainer.getNextQuestion()
+
+        if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
+        else telegramBotService.sendQuestion(chatId, question)
+    }
+
+    fun sendQuestion(chatId: Long, question: Question): String {
+        val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
+        var answerButtons = ""
+
+        question.variants.forEachIndexed { index, word -> answerButtons += """
+                				{
+                					"text": "${question.variants[index].translate}",
+                					"callback_data": "${CALLBACK_DATA_ANSWER_PREFIX + index}"
+                				}
+            """.trimIndent()
+
+            if (index != question.variants.lastIndex) answerButtons += ",\n"
+        }
+
+        val questionBody = """
+            {
+            	"chat_id": "$chatId",
+            	"text": "${question.correctAnswer.original}:",
+            	"reply_markup": {
+            		"inline_keyboard": [
+            			[
+            				$answerButtons
+            			]
+            		]
+            	}
+            }
+        """.trimIndent()
+
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
+            .header("Content-type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(questionBody))
+            .build()
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        return response.body()
+
     }
 }
 
@@ -68,3 +117,4 @@ const val TELEGRAM_ADDRESS = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val STATISTICS_CLICKED = "statistics_clicked"
 const val EXIT_CLICKED = "exit_clicked"
+const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
