@@ -42,11 +42,11 @@ fun main(args: Array<String>) {
             println("botText: $botMessage")
         }
 
-        if (message?.lowercase() == ProgramStart.VALUE_ONE) {
+        if (message?.lowercase() == ProgramStart.MENU) {
             telegramBotService.sendMenu(chatId)
         }
 
-        if (message?.lowercase() == ProgramStart.VALUE_TWO) {
+        if (message?.lowercase() == ProgramStart.START) {
             telegramBotService.sendMenu(chatId)
         }
 
@@ -61,12 +61,24 @@ fun main(args: Array<String>) {
         if (data?.lowercase() == LEARN_WORDS_CLICKED) {
             telegramBotService.checkNextQuestionAndSend(trainer, telegramBotService, chatId)
         }
+
+        if (data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true) {
+            val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+            if (trainer.checkAnswer(userAnswerIndex)) telegramBotService.sendMessage(chatId, "\'Правильно!\'")
+            else {
+                telegramBotService.sendMessage(
+                    chatId,
+                    "\'Неправильно! ${trainer.question?.correctAnswer?.original} - это ${trainer.question?.correctAnswer?.translate}\'"
+                )
+            }
+            telegramBotService.checkNextQuestionAndSend(trainer, telegramBotService, chatId)
+        }
     }
 }
 
 object ProgramStart {
-    const val VALUE_ONE = "menu"
-    const val VALUE_TWO = "/start"
+    const val MENU = "menu"
+    const val START = "/start"
 }
 
 const val WELCOME_MESSAGE = "hello"
