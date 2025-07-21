@@ -20,45 +20,41 @@ class TelegramBotService(
 
     fun sendMessage(json: Json, chatId: Long?, message: String): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
-
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = message,
         )
-
         val requestBodyString = json.encodeToString(requestBody)
-
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
 
     fun sendMenu(json: Json, chatId: Long?): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
-
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = "Основное меню",
             replyMarkup = ReplyMarkup(
-                listOf(listOf(
-                    InlineKeyboard(callbackData = LEARN_WORDS_CLICKED, text = "Изучать слова"),
-                    InlineKeyboard(callbackData = STATISTICS_CLICKED, text = "Статистика"),
-                    InlineKeyboard(callbackData = EXIT_CLICKED, text = "Выход"),
-                ))
-            )
+                listOf(
+                    listOf(
+                        InlineKeyboard(text = "Изучать слова", callbackData = LEARN_WORDS_CLICKED),
+                        InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+                    ),
+                    listOf(
+                        InlineKeyboard(text = "Сбросить прогресс", callbackData = RESET_CLICKED),
+                    )
+                )
+            ),
         )
-
         val requestBodyString = json.encodeToString(requestBody)
-
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -76,26 +72,25 @@ class TelegramBotService(
 
     fun sendQuestion(json: Json, chatId: Long?, question: Question): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
-
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = question.correctAnswer.original,
             replyMarkup = ReplyMarkup(
-                listOf(question.variants.mapIndexed { index, word ->
-                    InlineKeyboard(
-                        text = word.translate, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                listOf(
+                    question.variants.mapIndexed { index, word ->
+                        InlineKeyboard(text = word.translate, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index")
+                    },
+                    listOf(
+                        InlineKeyboard(text = "Возврат в меню", callbackData = MENU_CLICKED),
                     )
-                })
+                )
             )
         )
-
         val requestBodyString = json.encodeToString(requestBody)
-
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -104,5 +99,6 @@ class TelegramBotService(
 const val TELEGRAM_ADDRESS = "https://api.telegram.org/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val STATISTICS_CLICKED = "statistics_clicked"
-const val EXIT_CLICKED = "exit_clicked"
+const val RESET_CLICKED = "reset_clicked"
+const val MENU_CLICKED = "menu_clicked"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
