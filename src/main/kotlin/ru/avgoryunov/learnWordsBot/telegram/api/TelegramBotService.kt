@@ -1,13 +1,20 @@
-package org.example
+package ru.avgoryunov.learnWordsBot.telegram.api
 
 import kotlinx.serialization.json.Json
-import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
+import java.net.URI
 import java.net.http.HttpResponse
+import ru.avgoryunov.learnWordsBot.telegram.api.entities.SendMessageRequest
+import ru.avgoryunov.learnWordsBot.telegram.api.entities.ReplyMarkup
+import ru.avgoryunov.learnWordsBot.telegram.api.entities.InlineKeyboard
+import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
+import ru.avgoryunov.learnWordsBot.trainer.model.Question
+
 
 class TelegramBotService(
     val botToken: String,
+    val json: Json = Json { ignoreUnknownKeys = true },
 ) {
     val client: HttpClient = HttpClient.newBuilder().build()
 
@@ -18,7 +25,7 @@ class TelegramBotService(
         return response.body()
     }
 
-    fun sendMessage(json: Json, chatId: Long?, message: String): String {
+    fun sendMessage(chatId: Long?, message: String): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -33,7 +40,7 @@ class TelegramBotService(
         return response.body()
     }
 
-    fun sendMenu(json: Json, chatId: Long?): String {
+    fun sendMenu(chatId: Long?): String {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -41,11 +48,20 @@ class TelegramBotService(
             replyMarkup = ReplyMarkup(
                 listOf(
                     listOf(
-                        InlineKeyboard(text = "Изучать слова", callbackData = LEARN_WORDS_CLICKED),
-                        InlineKeyboard(text = "Статистика", callbackData = STATISTICS_CLICKED),
+                        InlineKeyboard(
+                            text = "Изучать слова",
+                            callbackData = LEARN_WORDS_CLICKED
+                        ),
+                        InlineKeyboard(
+                            text = "Статистика",
+                            callbackData = STATISTICS_CLICKED
+                        ),
                     ),
                     listOf(
-                        InlineKeyboard(text = "Сбросить прогресс", callbackData = RESET_CLICKED),
+                        InlineKeyboard(
+                            text = "Сбросить прогресс",
+                            callbackData = RESET_CLICKED
+                        ),
                     )
                 )
             ),
@@ -66,7 +82,7 @@ class TelegramBotService(
     ) {
         val question = trainer.getNextQuestion()
 
-        if (question == null) telegramBotService.sendMessage(Json, chatId, "Все слова в словаре выучены")
+        if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
         else telegramBotService.sendQuestion(Json, chatId, question)
     }
 
@@ -78,10 +94,16 @@ class TelegramBotService(
             replyMarkup = ReplyMarkup(
                 listOf(
                     question.variants.mapIndexed { index, word ->
-                        InlineKeyboard(text = word.translate, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index")
+                        InlineKeyboard(
+                            text = word.translate,
+                            callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index"
+                        )
                     },
                     listOf(
-                        InlineKeyboard(text = "Возврат в меню", callbackData = MENU_CLICKED),
+                        InlineKeyboard(
+                            text = "Возврат в меню",
+                            callbackData = MENU_CLICKED
+                        ),
                     )
                 )
             )

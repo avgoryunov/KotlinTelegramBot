@@ -1,24 +1,9 @@
-package org.example
+package ru.avgoryunov.learnWordsBot.trainer
 
 import java.io.File
-import kotlin.String
-
-data class Word(
-    val original: String,
-    val translate: String,
-    var correctAnswersCount: Int = 0,
-)
-
-data class Statistics(
-    val learned: Int,
-    val total: Int,
-    val percentLearned: Int,
-)
-
-data class Question(
-    val variants: List<Word>,
-    val correctAnswer: Word,
-)
+import ru.avgoryunov.learnWordsBot.trainer.model.Word
+import ru.avgoryunov.learnWordsBot.trainer.model.Statistics
+import ru.avgoryunov.learnWordsBot.trainer.model.Question
 
 class LearnWordsTrainer(
     private val fileName: String = "words.txt",
