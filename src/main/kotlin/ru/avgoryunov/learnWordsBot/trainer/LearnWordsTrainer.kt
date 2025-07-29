@@ -1,25 +1,12 @@
-package org.example
+package ru.avgoryunov.learnWordsBot.trainer
 
 import java.io.File
-
-data class Word(
-    val original: String,
-    val translate: String,
-    var correctAnswersCount: Int = 0,
-)
-
-data class Statistics(
-    val learned: Int,
-    val total: Int,
-    val percentLearned: Int,
-)
-
-data class Question(
-    val variants: List<Word>,
-    val correctAnswer: Word,
-)
+import ru.avgoryunov.learnWordsBot.trainer.model.Word
+import ru.avgoryunov.learnWordsBot.trainer.model.Statistics
+import ru.avgoryunov.learnWordsBot.trainer.model.Question
 
 class LearnWordsTrainer(
+    private val fileName: String = "words.txt",
     private val learnedAnswerCount: Int = 3,
     private val countOfQuestionWords: Int = 4,
 ) {
@@ -57,7 +44,7 @@ class LearnWordsTrainer(
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
             if (correctAnswerId == userAnswerIndex) {
                 it.correctAnswer.correctAnswersCount++
-                saveDictionary(dictionary)
+                saveDictionary()
                 true
             } else {
                 false
@@ -67,8 +54,12 @@ class LearnWordsTrainer(
 
     private fun loadDictionary(): List<Word> {
         try {
+            val wordsFile = File(fileName)
+            if (!wordsFile.exists()) {
+                File("words.txt").copyTo(wordsFile)
+            }
+
             val dictionary = mutableListOf<Word>()
-            val wordsFile = File("words.txt")
             val lines: List<String> = wordsFile.readLines()
 
             for (line in lines) {
@@ -83,12 +74,17 @@ class LearnWordsTrainer(
         }
     }
 
-    private fun saveDictionary(dictionary: List<Word>) {
-        File("words.txt").printWriter().use { out ->
+    private fun saveDictionary() {
+        File(fileName).printWriter().use { out ->
             dictionary.forEach { word ->
                 out.println("${word.original}|${word.translate}|${word.correctAnswersCount}")
             }
         }
+    }
+
+    fun resetProgress() {
+        dictionary.forEach { it.correctAnswersCount = 0 }
+        saveDictionary()
     }
 }
 

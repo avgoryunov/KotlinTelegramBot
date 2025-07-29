@@ -1,4 +1,7 @@
-package org.example
+package ru.avgoryunov.learnWordsBot.console
+
+import ru.avgoryunov.learnWordsBot.trainer.model.Question
+import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 
 fun Question.asConsoleString(): String {
     val variants = this.variants
@@ -7,7 +10,14 @@ fun Question.asConsoleString(): String {
     return this.correctAnswer.original + "\n" + variants + "\n0 - выйти в меню"
 }
 
-fun main(trainer: LearnWordsTrainer) {
+fun main() {
+
+    val trainer = try {
+        LearnWordsTrainer()
+    } catch (_: Exception) {
+        println("Невозможно загрузить словарь")
+        return
+    }
 
     while (true) {
         println("\nМеню:")
