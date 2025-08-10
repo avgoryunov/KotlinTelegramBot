@@ -3,7 +3,7 @@ name: Build and Publish
 on:
   push:
     branches:
-      - master
+      - master  # имя основной ветки
 
 jobs:
   build:
@@ -11,23 +11,19 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v2
+
       - name: Set up JDK
         uses: actions/setup-java@v3
-      
         with:
           distribution: 'oracle'
           java-version: '23'
-          
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
 
       - name: Build with Gradle
         run: ./gradlew shadowJar
 
       - name: Rename file
-        run: mv build/libs/EnglishWordsBot-1.0-SNAPSHOT-all.jar bot.jar
+        run: mv build/libs/KotlinTelegramBot-1.0-SNAPSHOT-all.jar bot.jar
 
       - name: Deploy jar to VPS
         uses: appleboy/scp-action@master
