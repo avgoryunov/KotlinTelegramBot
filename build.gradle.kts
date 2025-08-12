@@ -1,6 +1,8 @@
 plugins {
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.serialization") version "2.2.0"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
+    application
 }
 
 group = "org.example"
@@ -17,4 +19,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass.set("ru.avgoryunov.learnWordsBot.telegram.TelegramKt")
 }

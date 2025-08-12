@@ -10,6 +10,7 @@ import ru.avgoryunov.learnWordsBot.telegram.api.entities.ReplyMarkup
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.InlineKeyboard
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
+import java.io.IOException
 
 
 class TelegramBotService(
@@ -21,7 +22,15 @@ class TelegramBotService(
     fun getUpdates(updateId: Long): String {
         val urlGetUpdates = "$TELEGRAM_ADDRESS$botToken/getUpdates?offset=$updateId"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> =
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (e: IOException) {
+                if (e.message?.contains("GOAWAY") == true) {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                } else throw e
+            }
+
         return response.body()
     }
 
@@ -36,7 +45,14 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> =
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (e: IOException) {
+                if (e.message?.contains("GOAWAY") == true) {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                } else throw e
+            }
         return response.body()
     }
 
@@ -71,7 +87,14 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> =
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (e: IOException) {
+                if (e.message?.contains("GOAWAY") == true) {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                } else throw e
+            }
         return response.body()
     }
 
@@ -113,7 +136,14 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response: HttpResponse<String> =
+            try {
+                client.send(request, HttpResponse.BodyHandlers.ofString())
+            } catch (e: IOException) {
+                if (e.message?.contains("GOAWAY") == true) {
+                    client.send(request, HttpResponse.BodyHandlers.ofString())
+                } else throw e
+            }
         return response.body()
     }
 }
