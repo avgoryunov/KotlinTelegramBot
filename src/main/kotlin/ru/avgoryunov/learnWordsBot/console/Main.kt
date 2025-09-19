@@ -62,7 +62,6 @@ fun main() {
             }
 
             3 -> {
-                dictionary.resetUserProgress(chatId)
                 DriverManager.getConnection("jdbc:sqlite:$DEFAULT_DATABASE_NAME").use { connection ->
                     connection.createStatement().use { statement ->
                         statement.executeUpdate(
