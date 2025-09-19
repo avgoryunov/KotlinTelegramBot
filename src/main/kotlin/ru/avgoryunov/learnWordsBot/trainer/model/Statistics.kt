@@ -1,7 +1,7 @@
 package ru.avgoryunov.learnWordsBot.trainer.model
 
 data class Statistics(
-    val learned: Int,
-    val total: Int,
-    val percentLearned: Int,
+    val numberOfLearnedWords: Int,
+    val numberOfTotalWords: Int,
+    val percentOfLearnedWords: Int,
 )

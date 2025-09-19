@@ -5,13 +5,13 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.URI
 import java.net.http.HttpResponse
+import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.SendMessageRequest
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.ReplyMarkup
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.InlineKeyboard
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
 import java.io.IOException
-
 
 class TelegramBotService(
     val botToken: String,
@@ -30,33 +30,32 @@ class TelegramBotService(
                     client.send(request, HttpResponse.BodyHandlers.ofString())
                 } else throw e
             }
-
         return response.body()
     }
 
-    fun sendMessage(chatId: Long?, message: String): String {
+    fun sendMessage(chatId: Long?, message: String): String? {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
-        val requestBody = SendMessageRequest(
-            chatId = chatId,
-            text = message,
-        )
+        val requestBody = SendMessageRequest(chatId, message)
         val requestBodyString = json.encodeToString(requestBody)
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> =
+        val response: HttpResponse<String>? =
             try {
                 client.send(request, HttpResponse.BodyHandlers.ofString())
             } catch (e: IOException) {
                 if (e.message?.contains("GOAWAY") == true) {
                     client.send(request, HttpResponse.BodyHandlers.ofString())
-                } else throw e
+                } else {
+                    println(e.message)
+                    null
+                }
             }
-        return response.body()
+        return response?.body()
     }
 
-    fun sendMenu(chatId: Long?): String {
+    fun sendMenu(chatId: Long?): String? {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -87,29 +86,34 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> =
+        val response: HttpResponse<String>? =
             try {
                 client.send(request, HttpResponse.BodyHandlers.ofString())
             } catch (e: IOException) {
                 if (e.message?.contains("GOAWAY") == true) {
                     client.send(request, HttpResponse.BodyHandlers.ofString())
-                } else throw e
+                } else {
+                    println(e.message)
+                    null
+                }
             }
-        return response.body()
+        return response?.body()
     }
 
     fun checkNextQuestionAndSend(
-        trainer: LearnWordsTrainer,
-        telegramBotService: TelegramBotService,
         chatId: Long?,
+        dictionary: DatabaseUserDictionary,
+        trainer: LearnWordsTrainer,
     ) {
-        val question = trainer.getNextQuestion()
+        val question = trainer.getNextQuestion(chatId, dictionary)
 
-        if (question == null) telegramBotService.sendMessage(chatId, "Все слова в словаре выучены")
-        else telegramBotService.sendQuestion(Json, chatId, question)
+        if (question == null) {
+            val message = "Все слова в словаре выучены"
+            sendMessage(chatId, message)
+        } else sendQuestion(chatId, question)
     }
 
-    fun sendQuestion(json: Json, chatId: Long?, question: Question): String {
+    fun sendQuestion(chatId: Long?, question: Question): String? {
         val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
@@ -136,15 +140,18 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val response: HttpResponse<String> =
+        val response: HttpResponse<String>? =
             try {
                 client.send(request, HttpResponse.BodyHandlers.ofString())
             } catch (e: IOException) {
                 if (e.message?.contains("GOAWAY") == true) {
                     client.send(request, HttpResponse.BodyHandlers.ofString())
-                } else throw e
+                } else {
+                    println(e.message)
+                    null
+                }
             }
-        return response.body()
+        return response?.body()
     }
 }
 
