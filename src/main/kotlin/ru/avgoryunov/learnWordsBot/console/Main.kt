@@ -1,7 +1,11 @@
 package ru.avgoryunov.learnWordsBot.console
 
+import ru.avgoryunov.learnWordsBot.dictionary.DEFAULT_DATABASE_NAME
+import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
+import java.sql.DriverManager
+import kotlin.use
 
 fun Question.asConsoleString(): String {
     val variants = this.variants
@@ -12,8 +16,11 @@ fun Question.asConsoleString(): String {
 
 fun main() {
 
-    val trainer = try {
-        LearnWordsTrainer()
+    val trainer = LearnWordsTrainer()
+    val chatId = null
+
+    val dictionary = try {
+        DatabaseUserDictionary()
     } catch (_: Exception) {
         println("Невозможно загрузить словарь")
         return
@@ -23,6 +30,7 @@ fun main() {
         println("\nМеню:")
         println("1 - Учить слова")
         println("2 - Статистика")
+        println("3 - Сбросить прогресс обучения")
         println("0 - Выход")
 
         val incomingValue = readLine()?.toIntOrNull()
@@ -30,7 +38,7 @@ fun main() {
         when (incomingValue) {
             1 -> {
                 while (true) {
-                    val question = trainer.getNextQuestion()
+                    val question = trainer.getNextQuestion(chatId, dictionary)
 
                     if (question == null) {
                         println("Все слова в словаре выучены")
@@ -43,19 +51,33 @@ fun main() {
 
                     if (userAnswerInput == 0) break
 
-                    if (trainer.checkAnswer(userAnswerInput?.minus(1))) println("Правильно!")
+                    if (trainer.checkAnswer(chatId, userAnswerInput?.minus(1), dictionary)) println("Правильно!")
                     else println("Неправильно! ${question.correctAnswer.original} – это ${question.correctAnswer.translate}")
                 }
             }
 
             2 -> {
-                val statistics = trainer.getStatistics()
-                println("Выучено ${statistics.learned} из ${statistics.total} слов | ${statistics.percentLearned}%")
+                val statistics = trainer.getStatistics(chatId, dictionary)
+                println("Выучено ${statistics.numberOfLearnedWords} из ${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%")
+            }
+
+            3 -> {
+                DriverManager.getConnection("jdbc:sqlite:$DEFAULT_DATABASE_NAME").use { connection ->
+                    connection.createStatement().use { statement ->
+                        statement.executeUpdate(
+                            """
+                                DELETE FROM user_answers
+                                WHERE user_id is NULL
+                                """.trimIndent()
+                        )
+                    }
+                }
+                println("Прогресс сброшен")
             }
 
             0 -> return
 
-            else -> println("Введите число 1, 2 или 0")
+            else -> println("Введите число 1, 2, 3 или 0")
         }
     }
 }

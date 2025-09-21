@@ -1,90 +1,46 @@
 package ru.avgoryunov.learnWordsBot.trainer
 
-import java.io.File
-import ru.avgoryunov.learnWordsBot.trainer.model.Word
+import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
 import ru.avgoryunov.learnWordsBot.trainer.model.Statistics
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
 
 class LearnWordsTrainer(
-    private val fileName: String = "words.txt",
-    private val learnedAnswerCount: Int = 3,
-    private val countOfQuestionWords: Int = 4,
+    private val countVariants: Int = 4,
 ) {
     var question: Question? = null
-    private val dictionary = loadDictionary()
 
-    fun getStatistics(): Statistics {
-        val learned = dictionary.count { it.correctAnswersCount >= learnedAnswerCount }
-        val total = dictionary.count()
-        val percentLearned = learned * FULL_PERCENT / total
-        return Statistics(learned, total, percentLearned)
+    fun getStatistics(chatId: Long?, dictionary: DatabaseUserDictionary): Statistics {
+        val numberOfLearnedWords = dictionary.getNumberOfLearnedWords(chatId)
+        val numberOfTotalWords = dictionary.getSize()
+        val percentOfLearnedWords = numberOfLearnedWords * FULL_PERCENT / numberOfTotalWords
+        val statistics = Statistics(numberOfLearnedWords, numberOfTotalWords, percentOfLearnedWords)
+        return statistics
     }
 
-    fun getNextQuestion(): Question? {
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < learnedAnswerCount }
-        if (notLearnedList.isEmpty()) return null
-        val questionWords = if (notLearnedList.size < countOfQuestionWords) {
-            val learnedList = dictionary.filter { it.correctAnswersCount >= learnedAnswerCount }
-            notLearnedList.shuffled().take(countOfQuestionWords) +
-                    learnedList.shuffled().take(countOfQuestionWords - notLearnedList.size)
-        } else {
-            notLearnedList.shuffled().take(countOfQuestionWords)
-        }.shuffled()
-
-        val correctAnswer = questionWords.random()
-        question = Question(
-            variants = questionWords,
-            correctAnswer = correctAnswer,
-        )
+    fun getNextQuestion(chatId: Long?, dictionary: DatabaseUserDictionary): Question? {
+        val learnedWords = dictionary.getLearnedWords(chatId)
+        val unlearnedWords = dictionary.getUnlearnedWords(chatId)
+        if (unlearnedWords.isEmpty()) return null
+        val variants =
+            if (unlearnedWords.size < countVariants) {
+                unlearnedWords.shuffled().take(countVariants) +
+                        learnedWords.shuffled().take(countVariants - unlearnedWords.size)
+            } else (unlearnedWords.shuffled().take(countVariants)).shuffled()
+        val correctAnswer = variants.random()
+        question = Question(variants, correctAnswer)
         return question
     }
 
-    fun checkAnswer(userAnswerIndex: Int?): Boolean {
+    fun checkAnswer(chatId: Long?, userAnswerIndex: Int?, dictionary: DatabaseUserDictionary): Boolean {
         return question?.let {
             val correctAnswerId = it.variants.indexOf(it.correctAnswer)
             if (correctAnswerId == userAnswerIndex) {
-                it.correctAnswer.correctAnswersCount++
-                saveDictionary()
+                val original = it.correctAnswer.original
+                val correctAnswersCount = (it.correctAnswer.correctAnswersCount) + 1
+                dictionary.setCorrectAnswersCount(chatId, original, correctAnswersCount)
                 true
-            } else {
-                false
-            }
+            } else false
         } ?: false
-    }
-
-    private fun loadDictionary(): List<Word> {
-        try {
-            val wordsFile = File(fileName)
-            if (!wordsFile.exists()) {
-                File("words.txt").copyTo(wordsFile)
-            }
-
-            val dictionary = mutableListOf<Word>()
-            val lines: List<String> = wordsFile.readLines()
-
-            for (line in lines) {
-                val line = line.split("|")
-                val word =
-                    Word(original = line[0], translate = line[1], correctAnswersCount = line[2].toIntOrNull() ?: 0)
-                dictionary.add(word)
-            }
-            return dictionary
-        } catch (e: IndexOutOfBoundsException) {
-            throw IllegalStateException("Некорректный файл: \"${e.message}\"")
-        }
-    }
-
-    private fun saveDictionary() {
-        File(fileName).printWriter().use { out ->
-            dictionary.forEach { word ->
-                out.println("${word.original}|${word.translate}|${word.correctAnswersCount}")
-            }
-        }
-    }
-
-    fun resetProgress() {
-        dictionary.forEach { it.correctAnswersCount = 0 }
-        saveDictionary()
     }
 }
 
