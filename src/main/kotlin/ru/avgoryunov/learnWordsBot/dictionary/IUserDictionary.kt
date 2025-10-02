@@ -3,6 +3,7 @@ package ru.avgoryunov.learnWordsBot.dictionary
 import ru.avgoryunov.learnWordsBot.trainer.model.Word
 
 interface IUserDictionary {
+    fun checkTheDatabaseStructure(): Boolean
     fun getNumberOfLearnedWords(chatId: Long?): Int
     fun getSize(): Int
     fun getLearnedWords(chatId: Long?): List<Word>
