@@ -16,6 +16,8 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC3")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC3")
 }
 
 tasks.test {

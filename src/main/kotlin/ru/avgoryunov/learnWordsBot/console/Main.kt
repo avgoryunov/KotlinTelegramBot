@@ -1,30 +1,33 @@
 package ru.avgoryunov.learnWordsBot.console
 
-import ru.avgoryunov.learnWordsBot.dictionary.DEFAULT_DATABASE_NAME
 import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
-import java.sql.DriverManager
-import kotlin.use
 
-fun Question.asConsoleString(): String {
-    val variants = this.variants
-        .mapIndexed { index: Int, word -> "${index + 1} - ${word.translate}" }
-        .joinToString("\n")
-    return this.correctAnswer.original + "\n" + variants + "\n0 - выйти в меню"
+fun Question?.asConsoleString(): String? {
+    return if (this?.variants.isNullOrEmpty()) null
+    else {
+        val variants = this.variants
+            .mapIndexed { index: Int, word -> "${index + 1} - ${word.translate.filter { it.isLetterOrDigit() || it.isWhitespace() }}" }
+            .joinToString("\n")
+        this.correctAnswer.original.filter { it.isLetterOrDigit() || it.isWhitespace() } + "\n" + variants + "\n0 - выйти в меню"
+    }
 }
 
 fun main() {
+    val dictionary = DatabaseUserDictionary()
+    val chatId = 1L
+    val userName = "user"
+    val check = dictionary.checkTheDatabaseStructure()
 
-    val trainer = LearnWordsTrainer()
-    val chatId = null
-
-    val dictionary = try {
-        DatabaseUserDictionary()
-    } catch (_: Exception) {
+    if (!check) {
         println("Невозможно загрузить словарь")
         return
     }
+
+    dictionary.addNewUser(userName, chatId)
+
+    val trainer = LearnWordsTrainer()
 
     while (true) {
         println("\nМеню:")
@@ -33,7 +36,7 @@ fun main() {
         println("3 - Сбросить прогресс обучения")
         println("0 - Выход")
 
-        val incomingValue = readLine()?.toIntOrNull()
+        val incomingValue = readlnOrNull()?.toIntOrNull()
 
         when (incomingValue) {
             1 -> {
@@ -47,31 +50,26 @@ fun main() {
 
                     println(question.asConsoleString())
 
-                    val userAnswerInput = readLine()?.toIntOrNull()
+                    val userAnswerInput = readlnOrNull()?.toIntOrNull()
 
                     if (userAnswerInput == 0) break
 
-                    if (trainer.checkAnswer(chatId, userAnswerInput?.minus(1), dictionary)) println("Правильно!")
+                    if (trainer.checkAnswer(chatId, question, userAnswerInput?.minus(1), dictionary)) println("Правильно!")
                     else println("Неправильно! ${question.correctAnswer.original} – это ${question.correctAnswer.translate}")
                 }
             }
 
             2 -> {
                 val statistics = trainer.getStatistics(chatId, dictionary)
-                println("Выучено ${statistics.numberOfLearnedWords} из ${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%")
+                if (statistics != null) println(
+                    "Выучено ${statistics.numberOfLearnedWords} из " +
+                            "${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%"
+                )
+                else println("Отсутствуют слова в словаре")
             }
 
             3 -> {
-                DriverManager.getConnection("jdbc:sqlite:$DEFAULT_DATABASE_NAME").use { connection ->
-                    connection.createStatement().use { statement ->
-                        statement.executeUpdate(
-                            """
-                                DELETE FROM user_answers
-                                WHERE user_id is NULL
-                                """.trimIndent()
-                        )
-                    }
-                }
+                dictionary.resetUserProgress(chatId)
                 println("Прогресс сброшен")
             }
 

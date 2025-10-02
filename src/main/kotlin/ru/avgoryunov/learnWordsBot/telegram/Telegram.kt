@@ -16,10 +16,11 @@ fun main(args: Array<String>) {
     val service = TelegramBotService(botToken = args[0])
     var lastUpdateId = 0L
     val trainer = LearnWordsTrainer()
-    val dictionary = try {
-        DatabaseUserDictionary()
-    } catch (e: Exception) {
-        println("Невозможно загрузить словарь: ${e.message}")
+    val dictionary = DatabaseUserDictionary()
+    val check = dictionary.checkTheDatabaseStructure()
+
+    if (!check) {
+        println("Невозможно загрузить словарь")
         return
     }
 
@@ -63,8 +64,10 @@ fun handleUpdates(
 
     if (data?.lowercase() == STATISTICS_CLICKED) {
         val statistics = trainer.getStatistics(chatId, dictionary)
-        val message = "Выучено ${statistics.numberOfLearnedWords} из " +
-                "${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%"
+        val message =
+            if (statistics != null) "Выучено ${statistics.numberOfLearnedWords} из " +
+                    "${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%"
+            else "Отсутствуют слова в словаре"
         service.sendMessage(chatId, message)
     }
 
@@ -79,9 +82,10 @@ fun handleUpdates(
     }
 
     if (data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true) {
+        val question = trainer.question
         val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
         val message =
-            if (trainer.checkAnswer(chatId, userAnswerIndex, dictionary)) "\'Правильно!\'"
+            if (trainer.checkAnswer(chatId, question, userAnswerIndex, dictionary)) "\'Правильно!\'"
             else "\'Неправильно! ${trainer.question?.correctAnswer?.original} - это ${trainer.question?.correctAnswer?.translate}\'"
         service.sendMessage(chatId, message)
         service.checkNextQuestionAndSend(chatId, dictionary, trainer)
