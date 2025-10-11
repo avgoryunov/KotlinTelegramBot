@@ -1,5 +1,6 @@
 package ru.avgoryunov.learnWordsBot.telegram
 
+import kotlinx.serialization.json.Json.Default.decodeFromString
 import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.Response
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.Update
@@ -9,7 +10,9 @@ import ru.avgoryunov.learnWordsBot.telegram.api.STATISTICS_CLICKED
 import ru.avgoryunov.learnWordsBot.telegram.api.RESET_CLICKED
 import ru.avgoryunov.learnWordsBot.telegram.api.LEARN_WORDS_CLICKED
 import ru.avgoryunov.learnWordsBot.telegram.api.CALLBACK_DATA_ANSWER_PREFIX
+import ru.avgoryunov.learnWordsBot.telegram.api.entities.GetFileResponse
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
+import java.io.File
 
 fun main(args: Array<String>) {
 
@@ -51,6 +54,19 @@ fun handleUpdates(
     val chatId = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
     val userName = update.message?.chat?.userName ?: update.callbackQuery?.message?.chat?.userName ?: return
     val data = update.callbackQuery?.data
+    val document = update.message?.document
+
+    if (document != null) {
+        val jsonResponse = service.getFile(document.fileId)
+        val response: GetFileResponse = decodeFromString(jsonResponse)
+        response.result?.let {
+            val filename = "${it.fileUniqueId}.${it.filePath.substringAfter(".")}"
+            if (!File(filename).exists()) {
+                service.downloadFile(it.filePath, filename)
+                dictionary.updateTheDictionary(filename)
+            }
+        }
+    }
 
     if (message?.lowercase() == WELCOME_MESSAGE) {
         val message = "Hello"

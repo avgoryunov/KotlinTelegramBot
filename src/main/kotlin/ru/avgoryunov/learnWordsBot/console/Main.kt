@@ -7,10 +7,13 @@ import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 fun Question?.asConsoleString(): String? {
     return if (this?.variants.isNullOrEmpty()) null
     else {
-        val variants = this.variants
-            .mapIndexed { index: Int, word -> "${index + 1} - ${word.translate.filter { it.isLetterOrDigit() || it.isWhitespace() }}" }
-            .joinToString("\n")
-        this.correctAnswer.original.filter { it.isLetterOrDigit() || it.isWhitespace() } + "\n" + variants + "\n0 - выйти в меню"
+        this.variants
+            .mapIndexed { index: Int, word -> "${index + 1} - ${filterTheWord(word.translate)}" }
+            .joinToString(
+                separator = "\n",
+                prefix = "${this.filterTheWord(correctAnswer.original)}\n",
+                postfix = "\n0 - выйти в меню",
+            )
     }
 }
 

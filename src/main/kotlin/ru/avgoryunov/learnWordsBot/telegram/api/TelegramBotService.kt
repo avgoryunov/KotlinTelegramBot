@@ -6,12 +6,15 @@ import java.net.http.HttpRequest
 import java.net.URI
 import java.net.http.HttpResponse
 import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
+import ru.avgoryunov.learnWordsBot.telegram.api.entities.GetFileRequest
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.SendMessageRequest
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.ReplyMarkup
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.InlineKeyboard
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 import ru.avgoryunov.learnWordsBot.trainer.model.Question
+import java.io.File
 import java.io.IOException
+import java.io.InputStream
 
 class TelegramBotService(
     val botToken: String,
@@ -20,7 +23,7 @@ class TelegramBotService(
     val client: HttpClient = HttpClient.newBuilder().build()
 
     fun getUpdates(updateId: Long): String {
-        val urlGetUpdates = "$TELEGRAM_ADDRESS$botToken/getUpdates?offset=$updateId"
+        val urlGetUpdates = "$BOT_URL$botToken/getUpdates?offset=$updateId"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
         val response: HttpResponse<String> =
             try {
@@ -34,7 +37,7 @@ class TelegramBotService(
     }
 
     fun sendMessage(chatId: Long?, message: String): String? {
-        val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
+        val urlSendMessage = "$BOT_URL$botToken/sendMessage"
         val requestBody = SendMessageRequest(chatId, message)
         val requestBodyString = json.encodeToString(requestBody)
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage))
@@ -56,7 +59,7 @@ class TelegramBotService(
     }
 
     fun sendMenu(chatId: Long?): String? {
-        val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
+        val urlSendMessage = "$BOT_URL$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = "Основное меню",
@@ -114,7 +117,7 @@ class TelegramBotService(
     }
 
     fun sendQuestion(chatId: Long?, question: Question): String? {
-        val urlSendMessage = "$TELEGRAM_ADDRESS$botToken/sendMessage"
+        val urlSendMessage = "$BOT_URL$botToken/sendMessage"
         val requestBody = SendMessageRequest(
             chatId = chatId,
             text = question.correctAnswer.original,
@@ -153,9 +156,45 @@ class TelegramBotService(
             }
         return response?.body()
     }
+
+    fun getFile(fileId: String): String {
+        val urlGetFile = "$BOT_URL$botToken/getFile"
+        val requestBody = GetFileRequest(fileId)
+        val requestBodyString = json.encodeToString(requestBody)
+        val client: HttpClient = HttpClient.newBuilder().build()
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlGetFile))
+            .header("Content-type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
+            .build()
+        val response: HttpResponse<String> = client.send(
+            request,
+            HttpResponse.BodyHandlers.ofString()
+        )
+        return response.body()
+    }
+
+    fun downloadFile(filePath: String, fileName: String) {
+        val urlGetFile = "$BOT_FILE_URL$botToken/$filePath"
+        println(urlGetFile)
+        val request = HttpRequest
+            .newBuilder()
+            .uri(URI.create(urlGetFile))
+            .GET()
+            .build()
+
+        val response: HttpResponse<InputStream> = HttpClient
+            .newHttpClient()
+            .send(request, HttpResponse.BodyHandlers.ofInputStream())
+
+        println("status code: " + response.statusCode())
+        val body: InputStream = response.body()
+        body.copyTo(File(fileName).outputStream(), 16 * 1024)
+    }
 }
 
-const val TELEGRAM_ADDRESS = "https://api.telegram.org/bot"
+const val BOT_URL = "https://api.telegram.org/bot"
+const val BOT_FILE_URL = "https://api.telegram.org/file/bot"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val STATISTICS_CLICKED = "statistics_clicked"
 const val RESET_CLICKED = "reset_clicked"

@@ -2,6 +2,7 @@ package ru.avgoryunov.learnWordsBot.dictionary
 
 import ru.avgoryunov.learnWordsBot.dictionary.data.TableStructure
 import ru.avgoryunov.learnWordsBot.trainer.model.Word
+import java.io.File
 import java.sql.DriverManager
 import java.sql.SQLException
 import kotlin.use
@@ -217,6 +218,35 @@ class DatabaseUserDictionary(
             }
         } catch (e: SQLException) {
             e.message
+        }
+    }
+
+    override fun updateTheDictionary(filename: String) {
+        val updateList = mutableListOf<Word>()
+        val updateFile = File(filename)
+        updateFile.readLines().forEach {
+            val splitLine = it.split("|")
+            updateList.add(Word(splitLine[0], splitLine[1]))
+        }
+
+        for (i in updateList) {
+            try {
+                DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                    connection.createStatement().use { statement ->
+                        val wordCheck = statement.executeQuery(
+                            "SELECT EXISTS (SELECT * FROM words WHERE text = '${i.original}')"
+                        ).use { resultSet -> resultSet.getBoolean(1) }
+
+                        if (!wordCheck) {
+                            statement.executeUpdate(
+                                "INSERT INTO words ('text', 'translate') VALUES ('${i.original}', '${i.translate}')"
+                            )
+                        }
+                    }
+                }
+            } catch (e: SQLException) {
+                e.message
+            }
         }
     }
 }
