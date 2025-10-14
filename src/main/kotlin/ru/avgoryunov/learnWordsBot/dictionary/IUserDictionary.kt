@@ -11,4 +11,5 @@ interface IUserDictionary {
     fun setCorrectAnswersCount(chatId: Long?, original: String, correctAnswersCount: Int)
     fun resetUserProgress(chatId: Long?)
     fun addNewUser(userName: String, chatId: Long?)
+    fun updateTheDictionary(filename: String)
 }

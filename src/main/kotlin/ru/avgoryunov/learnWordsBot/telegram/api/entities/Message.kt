@@ -8,5 +8,7 @@ data class Message(
     @SerialName("chat")
     val chat: Chat,
     @SerialName("text")
-    val text: String,
+    val text: String? = null,
+    @SerialName("document")
+    val document: Document? = null,
 )
