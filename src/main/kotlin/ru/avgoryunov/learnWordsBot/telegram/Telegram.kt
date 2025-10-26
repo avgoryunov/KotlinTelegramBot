@@ -64,6 +64,7 @@ fun handleUpdates(
             if (!File(filename).exists()) {
                 service.downloadFile(it.filePath, filename)
                 dictionary.updateTheDictionary(filename)
+                println("Словарь пополнен")
             }
         }
     }
