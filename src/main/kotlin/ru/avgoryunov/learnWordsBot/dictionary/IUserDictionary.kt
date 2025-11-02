@@ -12,4 +12,7 @@ interface IUserDictionary {
     fun resetUserProgress(chatId: Long?)
     fun addNewUser(userName: String, chatId: Long?)
     fun updateTheDictionary(filename: String)
+    fun checkForFileIdAvailability(text: Word): String?
+    fun checkForFilePathAvailability(text: Word): String?
+    fun saveFileIdToTheDictionary(text: Word, fileId: String?)
 }

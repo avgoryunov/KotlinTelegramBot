@@ -5,7 +5,6 @@ import ru.avgoryunov.learnWordsBot.trainer.model.Word
 import java.io.File
 import java.sql.DriverManager
 import java.sql.SQLException
-import kotlin.use
 
 class DatabaseUserDictionary(
     val database: String = DEFAULT_DATABASE_NAME,
@@ -14,7 +13,7 @@ class DatabaseUserDictionary(
     override fun checkTheDatabaseStructure(): Boolean {
         val databaseStructure =
             listOf(
-                TableStructure("words", listOf("id", "text", "translate")),
+                TableStructure("words", listOf("id", "text", "translate", "photo_file_path", "photo_file_id")),
                 TableStructure("users", listOf("id", "username", "created_at", "chat_id")),
                 TableStructure("user_answers", listOf("user_id", "word_id", "correct_answer_count", "updated_at")),
             )
@@ -232,21 +231,116 @@ class DatabaseUserDictionary(
         for (i in updateList) {
             try {
                 DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
-                    connection.createStatement().use { statement ->
-                        val wordCheck = statement.executeQuery(
-                            "SELECT EXISTS (SELECT * FROM words WHERE text = '${i.original}')"
-                        ).use { resultSet -> resultSet.getBoolean(1) }
+                    val sql1 = "SELECT EXISTS (SELECT * FROM words WHERE text = ?)"
+                    connection.prepareStatement(sql1).use { statement ->
+                        statement.setString(1, i.original)
+                        statement.executeQuery().use { resultSet ->
 
-                        if (!wordCheck) {
-                            statement.executeUpdate(
-                                "INSERT INTO words ('text', 'translate') VALUES ('${i.original}', '${i.translate}')"
-                            )
+                            if (!resultSet.getBoolean(1)) {
+                                val sql2 = "INSERT INTO words ('text', 'translate') VALUES (?, ?)"
+                                connection.prepareStatement(sql2).use { statement ->
+                                    statement.setString(1, i.original)
+                                    statement.setString(2, i.translate)
+                                    statement.executeUpdate()
+                                }
+                            }
                         }
                     }
                 }
             } catch (e: SQLException) {
                 e.message
             }
+        }
+
+        try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                connection.createStatement().use { statement ->
+                    val numberWords = statement.executeQuery(
+                        "SELECT count(*) FROM words"
+                    ).use { resultSet -> resultSet.getInt(1) }
+
+                    statement.executeUpdate("UPDATE words SET photo_file_path = NULL")
+
+                    for (i in 1..numberWords) {
+                        val word = statement.executeQuery(
+                            "SELECT text FROM words WHERE id = '$i'"
+                        ).use { resultSet -> resultSet.getString(1) }
+                        val photoFileExists: Boolean = File("photo/$word.png").exists()
+                        if (photoFileExists) {
+                            statement.executeUpdate(
+                                "UPDATE words SET photo_file_path = ('photo/${word}.png') WHERE text = '$word'"
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
+        }
+    }
+
+    override fun checkForFileIdAvailability(text: Word): String? {
+        return try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                val sql1 = "SELECT nullif(trim((SELECT photo_file_id FROM words WHERE text = ?)),'') is not null"
+                connection.prepareStatement(sql1).use { statement ->
+                    statement.setString(1, text.original)
+                    statement.executeQuery().use { resultSet ->
+
+                        if (resultSet.getBoolean(1)) {
+                            val sql2 = "SELECT photo_file_id FROM words WHERE text = ?"
+                            connection.prepareStatement(sql2).use { statement ->
+                                statement.setString(1, text.original)
+                                statement.executeQuery().use { resultSet ->
+                                    resultSet.getString(1)
+                                }
+                            }
+                        } else null
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            println(e.message)
+            null
+        }
+    }
+
+    override fun checkForFilePathAvailability(text: Word): String? {
+        return try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                val sql1 = "SELECT nullif(trim((SELECT photo_file_path FROM words WHERE text = ?)),'') is not null"
+                connection.prepareStatement(sql1).use { statement ->
+                    statement.setString(1, text.original)
+                    statement.executeQuery().use { resultSet ->
+
+                        if (resultSet.getBoolean(1)) {
+                            val sql2 = "SELECT photo_file_path FROM words WHERE text = ?"
+                            connection.prepareStatement(sql2).use { statement ->
+                                statement.setString(1, text.original)
+                                statement.executeQuery().use { resultSet -> resultSet.getString(1) }
+                            }
+                        } else null
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            println(e.message)
+            null
+        }
+    }
+
+    override fun saveFileIdToTheDictionary(text: Word, fileId: String?) {
+        try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                val sql = "UPDATE words SET photo_file_id = (?) WHERE text = ?"
+                connection.prepareStatement(sql).use { statement ->
+                    statement.setString(1, fileId)
+                    statement.setString(2, text.original)
+                    statement.executeUpdate()
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
         }
     }
 }
