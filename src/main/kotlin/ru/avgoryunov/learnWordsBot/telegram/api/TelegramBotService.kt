@@ -128,7 +128,8 @@ class TelegramBotService(
 
                 if (fileId == null) {
                     val sendPhotoresponse = json.decodeFromString<SendPhotoResponse>(photoResponse)
-                    fileId = sendPhotoresponse.result.photo[2].fileId
+                    val lastPhotoIndex = sendPhotoresponse.result.photo.lastIndex
+                    fileId = sendPhotoresponse.result.photo.getOrNull(lastPhotoIndex)?.fileId
                     dictionary.saveFileIdToTheDictionary(question.correctAnswer, fileId)
                 }
             }

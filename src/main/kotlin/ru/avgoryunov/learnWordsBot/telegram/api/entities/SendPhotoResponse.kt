@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SendPhotoResponse(
     @SerialName("result")
-    val result: Result,
+    val result: PhotoResult,
 )

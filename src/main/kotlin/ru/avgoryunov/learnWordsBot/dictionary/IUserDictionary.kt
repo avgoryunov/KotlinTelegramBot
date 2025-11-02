@@ -14,5 +14,5 @@ interface IUserDictionary {
     fun updateTheDictionary(filename: String)
     fun checkForFileIdAvailability(text: Word): String?
     fun checkForFilePathAvailability(text: Word): String?
-    fun saveFileIdToTheDictionary(text: Word, fileId: String)
+    fun saveFileIdToTheDictionary(text: Word, fileId: String?)
 }
