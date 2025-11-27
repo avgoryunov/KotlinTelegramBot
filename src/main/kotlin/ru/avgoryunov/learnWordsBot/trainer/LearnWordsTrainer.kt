@@ -19,7 +19,6 @@ class LearnWordsTrainer(
             e.message
             null
         }
-
     }
 
     fun getNextQuestion(chatId: Long?, dictionary: DatabaseUserDictionary): Question? {

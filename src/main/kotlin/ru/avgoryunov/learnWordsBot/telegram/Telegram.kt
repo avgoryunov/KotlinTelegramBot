@@ -11,6 +11,8 @@ import ru.avgoryunov.learnWordsBot.telegram.api.RESET_CLICKED
 import ru.avgoryunov.learnWordsBot.telegram.api.LEARN_WORDS_CLICKED
 import ru.avgoryunov.learnWordsBot.telegram.api.CALLBACK_DATA_ANSWER_PREFIX
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.GetFileResponse
+import ru.avgoryunov.learnWordsBot.telegram.api.handleUndoCommand
+import ru.avgoryunov.learnWordsBot.telegram.api.handleUndoCommandMedia
 import ru.avgoryunov.learnWordsBot.trainer.LearnWordsTrainer
 import java.io.File
 
@@ -70,42 +72,54 @@ fun handleUpdates(
     }
 
     if (message?.lowercase() == WELCOME_MESSAGE) {
-        val message = "Hello"
-        service.sendMessage(chatId, message)
+        val text = "Hello"
+        service.sendMessage(chatId, text, replyMarkup = null)
+    }
+
+    if (message?.lowercase() == ROLLBACK_TO_PREVIOUS) {
+        handleUndoCommand(chatId, service)
+        handleUndoCommandMedia(chatId, service)
     }
 
     if (message?.lowercase() == ProgramStart.MENU || message?.lowercase() == ProgramStart.START || data?.lowercase() == MENU_CLICKED) {
         service.sendMenu(chatId)
-        dictionary.addNewUser(userName, chatId)
+        dictionary.addNewUser(chatId, userName)
     }
 
     if (data?.lowercase() == STATISTICS_CLICKED) {
         val statistics = trainer.getStatistics(chatId, dictionary)
-        val message =
-            if (statistics != null) "Выучено ${statistics.numberOfLearnedWords} из " +
-                    "${statistics.numberOfTotalWords} слов | ${statistics.percentOfLearnedWords}%"
-            else "Отсутствуют слова в словаре"
-        service.sendMessage(chatId, message)
+        service.sendProgress(chatId, statistics, dictionary)
     }
 
     if (data?.lowercase() == RESET_CLICKED) {
         dictionary.resetUserProgress(chatId)
-        val message = "Прогресс сброшен"
-        service.sendMessage(chatId, message)
+        val text = "Прогресс сброшен"
+        service.sendMessage(chatId, text, replyMarkup = null)
     }
 
     if (data?.lowercase() == LEARN_WORDS_CLICKED) {
-        service.checkNextQuestionAndSend(chatId, dictionary, trainer)
+        val nextQuestion = service.checkNextQuestion(chatId, trainer, dictionary)
+        if (nextQuestion != null) {
+            service.sendQuestion(chatId, nextQuestion, dictionary)
+            service.checkPhotoAndSend(chatId, nextQuestion, dictionary)
+        }
     }
 
     if (data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true) {
         val question = trainer.question
         val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
-        val message =
-            if (trainer.checkAnswer(chatId, question, userAnswerIndex, dictionary)) "\'Правильно!\'"
-            else "\'Неправильно! ${trainer.question?.correctAnswer?.original} - это ${trainer.question?.correctAnswer?.translate}\'"
-        service.sendMessage(chatId, message)
-        service.checkNextQuestionAndSend(chatId, dictionary, trainer)
+        val answerIsCorrect = trainer.checkAnswer(chatId, question, userAnswerIndex, dictionary)
+
+        if (question != null) service.showAnswerStatus(chatId, question, answerIsCorrect, dictionary)
+
+        if (answerIsCorrect) service.updateProgress(chatId, trainer, dictionary)
+
+        val nextQuestion = service.checkNextQuestion(chatId, trainer, dictionary)
+
+        if (nextQuestion != null) {
+            service.updateQuestion(chatId, nextQuestion, dictionary)
+            service.safeEditMessageMedia(chatId, nextQuestion, dictionary)
+        }
     }
 }
 
@@ -115,3 +129,4 @@ object ProgramStart {
 }
 
 const val WELCOME_MESSAGE = "hello"
+const val ROLLBACK_TO_PREVIOUS = "/undo"
