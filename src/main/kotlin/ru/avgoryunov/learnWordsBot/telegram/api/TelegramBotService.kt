@@ -52,8 +52,7 @@ class TelegramBotService(
 
         return if (question != null) question
         else {
-            val message = "Все слова в словаре выучены"
-            sendMessage(chatId, message, replyMarkup = null)
+            sendMessage(chatId, "Все слова в словаре выучены", replyMarkup = null)
             null
         }
     }
@@ -204,7 +203,6 @@ class TelegramBotService(
             .uri(URI.create("$BOT_URL$botToken/sendPhoto"))
             .postMultipartFormData(boundary, data)
             .build()
-        val client: HttpClient = HttpClient.newBuilder().build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -339,7 +337,6 @@ class TelegramBotService(
             .header("Content-type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
-        val client: HttpClient = HttpClient.newBuilder().build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
@@ -446,7 +443,6 @@ class TelegramBotService(
             .uri(URI.create("$BOT_URL$botToken/editMessageMedia"))
             .postMultipartFormData(boundary, data)
             .build()
-        val client: HttpClient = HttpClient.newBuilder().build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }

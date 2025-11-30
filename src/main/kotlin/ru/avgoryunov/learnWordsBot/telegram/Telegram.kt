@@ -72,8 +72,7 @@ fun handleUpdates(
     }
 
     if (message?.lowercase() == WELCOME_MESSAGE) {
-        val text = "Hello"
-        service.sendMessage(chatId, text, replyMarkup = null)
+        service.sendMessage(chatId, "Hello", replyMarkup = null)
     }
 
     if (message?.lowercase() == ROLLBACK_TO_PREVIOUS) {
@@ -93,8 +92,7 @@ fun handleUpdates(
 
     if (data?.lowercase() == RESET_CLICKED) {
         dictionary.resetUserProgress(chatId)
-        val text = "Прогресс сброшен"
-        service.sendMessage(chatId, text, replyMarkup = null)
+        service.sendMessage(chatId, "Прогресс сброшен", replyMarkup = null)
     }
 
     if (data?.lowercase() == LEARN_WORDS_CLICKED) {
