@@ -203,7 +203,7 @@ class DatabaseUserDictionary(
         }
     }
 
-    override fun addNewUser(userName: String, chatId: Long?) {
+    override fun addNewUser(chatId: Long?, userName: String) {
         try {
             DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
                 connection.createStatement().use { statement ->
@@ -279,7 +279,31 @@ class DatabaseUserDictionary(
         }
     }
 
-    override fun checkForFileIdAvailability(text: Word): String? {
+    override fun getFilePath(text: Word): String? {
+        return try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                val sql1 = "SELECT nullif(trim((SELECT photo_file_path FROM words WHERE text = ?)),'') is not null"
+                connection.prepareStatement(sql1).use { statement ->
+                    statement.setString(1, text.original)
+                    statement.executeQuery().use { resultSet ->
+
+                        if (resultSet.getBoolean(1)) {
+                            val sql2 = "SELECT photo_file_path FROM words WHERE text = ?"
+                            connection.prepareStatement(sql2).use { statement ->
+                                statement.setString(1, text.original)
+                                statement.executeQuery().use { resultSet -> resultSet.getString(1) }
+                            }
+                        } else null
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
+            null
+        }
+    }
+
+    override fun getFileId(text: Word): String? {
         return try {
             DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
                 val sql1 = "SELECT nullif(trim((SELECT photo_file_id FROM words WHERE text = ?)),'') is not null"
@@ -300,36 +324,12 @@ class DatabaseUserDictionary(
                 }
             }
         } catch (e: SQLException) {
-            println(e.message)
+            e.message
             null
         }
     }
 
-    override fun checkForFilePathAvailability(text: Word): String? {
-        return try {
-            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
-                val sql1 = "SELECT nullif(trim((SELECT photo_file_path FROM words WHERE text = ?)),'') is not null"
-                connection.prepareStatement(sql1).use { statement ->
-                    statement.setString(1, text.original)
-                    statement.executeQuery().use { resultSet ->
-
-                        if (resultSet.getBoolean(1)) {
-                            val sql2 = "SELECT photo_file_path FROM words WHERE text = ?"
-                            connection.prepareStatement(sql2).use { statement ->
-                                statement.setString(1, text.original)
-                                statement.executeQuery().use { resultSet -> resultSet.getString(1) }
-                            }
-                        } else null
-                    }
-                }
-            }
-        } catch (e: SQLException) {
-            println(e.message)
-            null
-        }
-    }
-
-    override fun saveFileIdToTheDictionary(text: Word, fileId: String?) {
+    override fun setFileId(text: Word, fileId: String?) {
         try {
             DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
                 val sql = "UPDATE words SET photo_file_id = (?) WHERE text = ?"
@@ -342,6 +342,83 @@ class DatabaseUserDictionary(
         } catch (e: SQLException) {
             e.message
         }
+    }
+
+    override fun getFilePathForEmptyPhoto(): String {
+        return try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                connection.createStatement().use { statement ->
+                    statement.executeQuery("SELECT empty_photo_file_path FROM data").use { resultSet ->
+                        resultSet.getString(1)
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
+        }!!
+    }
+
+    override fun getFileIdForEmptyPhoto(): String? {
+        return try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                connection.createStatement().use { statement ->
+                    statement.executeQuery("SELECT empty_photo_file_id FROM data").use { resultSet ->
+                        resultSet.getString(1)
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
+            null
+        }
+    }
+
+    override fun setFileIdForEmptyPhoto(fileId: String?) {
+        try {
+            DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                val sql = "UPDATE data SET empty_photo_file_id = (?)"
+                connection.prepareStatement(sql).use { statement ->
+                    statement.setString(1, fileId)
+                    statement.executeUpdate()
+                }
+            }
+        } catch (e: SQLException) {
+            e.message
+        }
+    }
+
+    override fun setMessageId(chatId: Long?, messageId: Long?, columnName: String) {
+        if (messageId != null && chatId != null) {
+            try {
+                DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                    val sql = "UPDATE users SET $columnName = (?) WHERE chat_id = ?"
+                    connection.prepareStatement(sql).use { statement ->
+                        statement.setLong(1, messageId)
+                        statement.setLong(2, chatId)
+                        statement.executeUpdate()
+                    }
+                }
+            } catch (e: SQLException) {
+                e.message
+            }
+        }
+    }
+
+    override fun getMessageId(chatId: Long?, columnName: String): Long? {
+        return if (chatId != null) {
+            try {
+                DriverManager.getConnection("jdbc:sqlite:$database").use { connection ->
+                    val sql1 = "SELECT $columnName FROM users WHERE chat_id = ?"
+                    connection.prepareStatement(sql1).use { statement ->
+                        statement.setLong(1, chatId)
+                        statement.executeQuery().use { resultSet -> resultSet.getLong(1) }
+                    }
+                }
+            } catch (e: SQLException) {
+                e.message
+                null
+            }
+        } else null
     }
 }
 

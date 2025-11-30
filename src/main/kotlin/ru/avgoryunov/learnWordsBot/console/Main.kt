@@ -28,7 +28,7 @@ fun main() {
         return
     }
 
-    dictionary.addNewUser(userName, chatId)
+    dictionary.addNewUser(chatId, userName)
 
     val trainer = LearnWordsTrainer()
 
@@ -57,7 +57,13 @@ fun main() {
 
                     if (userAnswerInput == 0) break
 
-                    if (trainer.checkAnswer(chatId, question, userAnswerInput?.minus(1), dictionary)) println("Правильно!")
+                    if (trainer.checkAnswer(
+                            chatId,
+                            question,
+                            userAnswerInput?.minus(1),
+                            dictionary
+                        )
+                    ) println("Правильно!")
                     else println("Неправильно! ${question.correctAnswer.original} – это ${question.correctAnswer.translate}")
                 }
             }
