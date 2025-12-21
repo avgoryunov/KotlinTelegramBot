@@ -6,6 +6,7 @@ import java.net.http.HttpRequest
 import java.net.URI
 import java.net.http.HttpResponse
 import ru.avgoryunov.learnWordsBot.dictionary.DatabaseUserDictionary
+import ru.avgoryunov.learnWordsBot.dictionary.MessageIdColumn
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.DeleteMessage
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.EditMessageRequest
 import ru.avgoryunov.learnWordsBot.telegram.api.entities.EditMessageResponse
@@ -99,8 +100,8 @@ class TelegramBotService(
             text = text,
         )
         val messageId = sendMessage(requestBody.chatId, requestBody.text, requestBody.replyMarkup)
-        val columnName = "message_id_with_statistics"
-        dictionary.setMessageId(chatId, messageId, columnName)
+        val column = MessageIdColumn.STATISTICS
+        dictionary.setMessageId(chatId, messageId, column)
     }
 
     fun sendQuestion(chatId: Long, question: Question, dictionary: DatabaseUserDictionary) {
@@ -125,8 +126,8 @@ class TelegramBotService(
             )
         )
         val messageId = sendMessage(requestBody.chatId, requestBody.text, requestBody.replyMarkup)
-        val columnName = "message_id_with_question"
-        dictionary.setMessageId(chatId, messageId, columnName)
+        val column = MessageIdColumn.QUESTION
+        dictionary.setMessageId(chatId, messageId, column)
     }
 
     fun checkPhotoAndSend(chatId: Long, question: Question, dictionary: DatabaseUserDictionary) {
@@ -139,8 +140,8 @@ class TelegramBotService(
             val photoResponse = sendPhoto(chatId, fileId, File(filePath))
             val responseString = json.decodeFromString<EditMessageResponse>(photoResponse)
             val messageId = responseString.result?.messageId
-            val columnName = "message_id_with_photo"
-            dictionary.setMessageId(chatId, messageId, columnName)
+            val column = MessageIdColumn.PHOTO
+            dictionary.setMessageId(chatId, messageId, column)
             // сохранение fileId
             if (fileId == null) {
                 val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(photoResponse)
@@ -155,8 +156,8 @@ class TelegramBotService(
             // сохранение messageId
             val responseString = json.decodeFromString<EditMessageResponse>(photoResponse)
             val messageId = responseString.result?.messageId
-            val columnName = "message_id_with_photo"
-            dictionary.setMessageId(chatId, messageId, columnName)
+            val column = MessageIdColumn.PHOTO
+            dictionary.setMessageId(chatId, messageId, column)
             // сохранение fileId
             if (fileId == null) {
                 val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(photoResponse)
@@ -215,7 +216,7 @@ class TelegramBotService(
         answerIsCorrect: Boolean,
         dictionary: DatabaseUserDictionary,
     ) {
-        val columnName = "message_id_with_question"
+        val columnName = MessageIdColumn.QUESTION
         val messageId = dictionary.getMessageId(chatId, columnName)
 
         if (messageId != null) {
@@ -248,7 +249,7 @@ class TelegramBotService(
 
     fun updateProgress(chatId: Long, trainer: LearnWordsTrainer, dictionary: DatabaseUserDictionary) {
         val statistics = trainer.getStatistics(chatId, dictionary)
-        val columnName = "message_id_with_statistics"
+        val columnName = MessageIdColumn.STATISTICS
         val messageId = dictionary.getMessageId(chatId, columnName)
 
         if (messageId != null) {
@@ -267,7 +268,7 @@ class TelegramBotService(
     }
 
     fun updateQuestion(chatId: Long, question: Question, dictionary: DatabaseUserDictionary) {
-        val columnName = "message_id_with_question"
+        val columnName = MessageIdColumn.QUESTION
         val messageId = dictionary.getMessageId(chatId, columnName)
 
         if (messageId != null) {
@@ -348,7 +349,7 @@ class TelegramBotService(
             var filePath = dictionary.getFilePath(question.correctAnswer)
             var fileId = dictionary.getFileId(question.correctAnswer)
             var editPhotoResponse = ""
-            val columnName = "message_id_with_photo"
+            val columnName = MessageIdColumn.PHOTO
             val messageId = dictionary.getMessageId(chatId, columnName)
 
             if (fileId != null) {
@@ -364,8 +365,8 @@ class TelegramBotService(
                 // сохранение messageId
                 val responseString = json.decodeFromString<EditMessageResponse>(photoResponse)
                 val messageId = responseString.result?.messageId
-                val columnName = "message_id_with_photo"
-                dictionary.setMessageId(chatId, messageId, columnName)
+                val column = MessageIdColumn.PHOTO
+                dictionary.setMessageId(chatId, messageId, column)
                 // сохранение fileId
                 val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(photoResponse)
                 val lastPhotoIndex = sendPhotoResponse.result.photo.lastIndex
@@ -377,8 +378,8 @@ class TelegramBotService(
                 fileId = dictionary.getFileIdForEmptyPhoto()
                 if (fileId != null) {
                     // обновить фото через fileId
-                    val columnName = "message_id_with_photo"
-                    val messageId = dictionary.getMessageId(chatId, columnName)
+                    val column = MessageIdColumn.PHOTO
+                    val messageId = dictionary.getMessageId(chatId, column)
                     if (messageId != null) {
                         editPhotoResponse = editMessageMedia(chatId, messageId, fileId)
                         saveMessageStateForUser(chatId, messageId, fileId)
@@ -389,8 +390,8 @@ class TelegramBotService(
                     // сохранение messageId
                     val responseString = json.decodeFromString<EditMessageResponse>(photoResponse)
                     val messageId = responseString.result?.messageId
-                    val columnName = "message_id_with_photo"
-                    dictionary.setMessageId(chatId, messageId, columnName)
+                    val column = MessageIdColumn.PHOTO
+                    dictionary.setMessageId(chatId, messageId, column)
                     // сохранение fileId
                     val sendPhotoResponse = json.decodeFromString<SendPhotoResponse>(photoResponse)
                     val lastPhotoIndex = sendPhotoResponse.result.photo.lastIndex

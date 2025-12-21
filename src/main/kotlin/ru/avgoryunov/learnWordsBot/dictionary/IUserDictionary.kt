@@ -13,11 +13,11 @@ interface IUserDictionary {
     fun addNewUser(chatId: Long?, userName: String)
     fun updateTheDictionary(filename: String)
     fun getFilePath(text: Word): String?
-    fun getFileId(text: Word): String?
     fun setFileId(text: Word, fileId: String?)
+    fun getFileId(text: Word): String?
     fun getFilePathForEmptyPhoto(): String?
-    fun getFileIdForEmptyPhoto(): String?
     fun setFileIdForEmptyPhoto(fileId: String?)
-    fun setMessageId(chatId: Long?, messageId: Long?, columnName: String)
-    fun getMessageId(chatId: Long?, columnName: String): Long?
+    fun getFileIdForEmptyPhoto(): String?
+    fun setMessageId(chatId: Long?, messageId: Long?, messageIdColumn: MessageIdColumn)
+    fun getMessageId(chatId: Long?, messageIdColumn: MessageIdColumn): Long?
 }

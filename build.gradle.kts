@@ -18,6 +18,8 @@ dependencies {
     implementation("org.xerial:sqlite-jdbc:3.50.3.0")
     testImplementation("org.junit.jupiter:junit-jupiter-api:6.0.0-RC3")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:6.0.0-RC3")
+    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("ch.qos.logback:logback-classic:1.5.22")
 }
 
 tasks.test {
